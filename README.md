@@ -1,1 +1,3 @@
 # Osio2
+
+harjoitukset/
