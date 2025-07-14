@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+
 import Filter from "./Filter";
 import PersonForm from "./PersonForm";
-import Persons from "./Person";
+import Persons from "./Persons";
+import personService from "./services/PersonDB";
+
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
@@ -11,14 +13,23 @@ const App = () => {
 
   useEffect(() => {
     console.log("effect");
-    axios.get("http://localhost:3001/Persons").then((response) => {
+    personService.getAll().then((initialPersons) => {
       console.log("promise fulfilled");
-      setPersons(response.data);
+      setPersons(initialPersons);
     });
   }, []);
 
   // Palauttaa true tai false
   const alreadyExist = (name) => persons.some((p) => p.name === name);
+
+  // Henkilön poisto
+  const deletePerson = (id, name) => {
+    if (window.confirm(`Delete ${name}`)) {
+      personService.deletePerson(id).then(() => {
+        setPersons(persons.filter((person) => person.id !== id));
+      });
+    }
+  };
 
   // Filtteröinti
   // includes etsii koko sanasta ja startswith etsii alusta
@@ -29,15 +40,18 @@ const App = () => {
   // Listaan lisääminen
   const addPerson = (event) => {
     event.preventDefault(); // Estää oletusarvoisen toiminnan
+
+    const personObject = { name: newName, number: newNumber };
+
     if (alreadyExist(newName)) {
       alert(`${newName} is already added to phonebook`);
       return;
     }
-
-    const personObject = { name: newName, number: newNumber };
-    setPersons(persons.concat(personObject));
-    setNewName("");
-    setNewNumber("");
+    personService.create(personObject).then((returnedPerson) => {
+      setPersons(persons.concat(returnedPerson));
+      setNewName("");
+      setNewNumber("");
+    });
   };
 
   return (
@@ -51,7 +65,7 @@ const App = () => {
         newNumber={newNumber}
         setNewNumber={setNewNumber}
       />
-      <Persons persons={filteredPersons} />
+      <Persons persons={filteredPersons} deletePerson={deletePerson} />
     </div>
   );
 };
