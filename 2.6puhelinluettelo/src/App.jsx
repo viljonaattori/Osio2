@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-
+import Notification from "./services/Notification";
 import Filter from "./Filter";
 import PersonForm from "./PersonForm";
 import Persons from "./Persons";
 import personService from "./services/PersonDB";
-
+import "./index.css";
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [filter, setFilter] = useState("");
+  const [noteMessage, setNoteMessage] = useState({ text: null, type: "" });
 
   useEffect(() => {
     console.log("effect");
@@ -19,14 +20,20 @@ const App = () => {
     });
   }, []);
 
-  // Palauttaa true tai false
-  const alreadyExist = (name) => persons.some((p) => p.name === name);
+  // Ilmoitusviesti
+  const showNotification = (text, type = "success") => {
+    setNoteMessage({ text, type });
+    setTimeout(() => {
+      setNoteMessage({ text: null, type: "" });
+    }, 4000);
+  };
 
   // Henkilön poisto
   const deletePerson = (id, name) => {
     if (window.confirm(`Delete ${name}`)) {
       personService.deletePerson(id).then(() => {
         setPersons(persons.filter((person) => person.id !== id));
+        showNotification(`Deleted ${name}`, "error");
       });
     }
   };
@@ -39,24 +46,54 @@ const App = () => {
 
   // Listaan lisääminen
   const addPerson = (event) => {
-    event.preventDefault(); // Estää oletusarvoisen toiminnan
-
+    event.preventDefault();
     const personObject = { name: newName, number: newNumber };
+    const existingPerson = persons.find((p) => p.name === newName);
 
-    if (alreadyExist(newName)) {
-      alert(`${newName} is already added to phonebook`);
-      return;
+    if (existingPerson) {
+      const confirmUpdate = window.confirm(
+        `${newName} is already added to phonebook. Replace the old number with a new one?`
+      );
+      if (confirmUpdate) {
+        personService
+          .update(existingPerson.id, personObject)
+          .then((updatedPerson) => {
+            setPersons(
+              persons.map((p) =>
+                p.id !== existingPerson.id ? p : updatedPerson
+              )
+            );
+            showNotification(
+              `Updated number for ${updatedPerson.name}`,
+              "success"
+            );
+            setNewName("");
+            setNewNumber("");
+          })
+          .catch((error) => {
+            // Jos henkilö on poistettu toisella selaimella
+            showNotification(
+              `Error: Information of ${newName} has already been removed from server`,
+              "error"
+            );
+            setPersons(persons.filter((p) => p.id !== existingPerson.id));
+            console.log(error);
+          });
+      }
+    } else {
+      personService.create(personObject).then((returnedPerson) => {
+        setPersons(persons.concat(returnedPerson));
+        setNewName("");
+        setNewNumber("");
+        showNotification(`Added ${returnedPerson.name}`, "success");
+      });
     }
-    personService.create(personObject).then((returnedPerson) => {
-      setPersons(persons.concat(returnedPerson));
-      setNewName("");
-      setNewNumber("");
-    });
   };
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={noteMessage} />
       <Filter filter={filter} setFilter={setFilter} />
       <PersonForm
         addPerson={addPerson}
