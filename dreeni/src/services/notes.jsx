@@ -1,5 +1,6 @@
 import axios from "axios";
-const baseUrl = "/api/notes"; // Osoittaa nyt osion 3 backendiin
+const baseUrl = "https://osio3backend.onrender.com/api/notes";
+// Osoittaa nyt osion 3 backendiin
 
 const getAll = () => {
   const request = axios.get(baseUrl);
