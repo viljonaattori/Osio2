@@ -1,5 +1,5 @@
 import axios from "axios";
-const baseUrl = "/api/persons"; // Muutettu
+const baseUrl = "/api/persons"; // Lopullinen
 
 // Hae kaikki
 const getAll = () => {
