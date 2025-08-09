@@ -1,5 +1,5 @@
 import axios from "axios";
-const baseUrl = "https://osio3.onrender.com"; // Muutettu
+const baseUrl = "/api/persons"; // Muutettu
 
 // Hae kaikki
 const getAll = () => {
