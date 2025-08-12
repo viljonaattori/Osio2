@@ -106,7 +106,7 @@ const App = () => {
           showNotification(`Added ${returnedPerson.name}`, "success");
         })
         .catch((error) => {
-          // NÄYTÄ Mongoosen validaatiovirhe, esim. minLength < 3
+          // näytetään virhe error
           const msg = error?.response?.data?.error || "Creating person failed";
           showNotification(`Error: ${msg}`, "error");
           console.log(error.response.data);
