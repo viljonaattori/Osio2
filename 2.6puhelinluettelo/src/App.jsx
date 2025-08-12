@@ -14,10 +14,17 @@ const App = () => {
 
   useEffect(() => {
     console.log("effect");
-    personService.getAll().then((initialPersons) => {
-      console.log("promise fulfilled");
-      setPersons(initialPersons);
-    });
+    personService
+      .getAll()
+      .then((initialPersons) => {
+        console.log("promise fulfilled");
+        setPersons(initialPersons);
+      })
+      .catch((error) => {
+        const msg = error?.response?.data?.error || "Fetching persons failed";
+        showNotification(`Error: ${msg}`, "error");
+        console.log(error);
+      });
   }, []);
 
   // Ilmoitusviesti
@@ -31,10 +38,17 @@ const App = () => {
   // Henkilön poisto
   const deletePerson = (id, name) => {
     if (window.confirm(`Delete ${name}`)) {
-      personService.deletePerson(id).then(() => {
-        setPersons(persons.filter((person) => person.id !== id));
-        showNotification(`Deleted ${name}`, "error");
-      });
+      personService
+        .deletePerson(id)
+        .then(() => {
+          setPersons(persons.filter((person) => person.id !== id));
+          showNotification(`Deleted ${name}`, "error");
+        })
+        .catch((error) => {
+          const msg = error?.response?.data?.error || "Deleting failed";
+          showNotification(`Error: ${msg}`, "error");
+          console.log(error);
+        });
     }
   };
 
@@ -71,28 +85,38 @@ const App = () => {
             setNewNumber("");
           })
           .catch((error) => {
-            // Jos henkilö on poistettu toisella selaimella
-            showNotification(
-              `Error: Information of ${newName} has already been removed from server`,
-              "error"
-            );
-            setPersons(persons.filter((p) => p.id !== existingPerson.id));
+            const msg =
+              error?.response?.data?.error ||
+              `Information of ${newName} has already been removed from server`;
+            showNotification(`Error: ${msg}`, "error");
+            // Poista listasta vain jos backend palautti 404
+            if (error?.response?.status === 404) {
+              setPersons(persons.filter((p) => p.id !== existingPerson.id));
+            }
             console.log(error);
           });
       }
     } else {
-      personService.create(personObject).then((returnedPerson) => {
-        setPersons(persons.concat(returnedPerson));
-        setNewName("");
-        setNewNumber("");
-        showNotification(`Added ${returnedPerson.name}`, "success");
-      });
+      personService
+        .create(personObject)
+        .then((returnedPerson) => {
+          setPersons(persons.concat(returnedPerson));
+          setNewName("");
+          setNewNumber("");
+          showNotification(`Added ${returnedPerson.name}`, "success");
+        })
+        .catch((error) => {
+          // NÄYTÄ Mongoosen validaatiovirhe, esim. minLength < 3
+          const msg = error?.response?.data?.error || "Creating person failed";
+          showNotification(`Error: ${msg}`, "error");
+          console.log(error.response.data);
+        });
     }
   };
 
   return (
     <div>
-      <h2>Phonebook</h2>
+      <h2>Phonebookk</h2>
       <Notification message={noteMessage} />
       <Filter filter={filter} setFilter={setFilter} />
       <PersonForm
